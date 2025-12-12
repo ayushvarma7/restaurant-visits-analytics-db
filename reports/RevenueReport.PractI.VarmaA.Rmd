@@ -1,0 +1,367 @@
+---
+title: "Analyze Sales"
+author: "Ayush Varma"
+date: "Fall 2025"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 2
+    number_sections: true
+    fig_caption: true
+    highlight: tango
+  html_document:
+    toc: true
+    toc_depth: '2'
+    df_print: paged
+subtitle: CS5200 Practicum I
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+# Install packages if not already installed
+required_packages <- c("RMySQL", "DBI", "kableExtra", "dplyr", "tidyr", 
+                       "scales", "lubridate", "ggplot2")
+
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages, repos = "http://cran.us.r-project.org")
+
+
+# Load required libraries
+library(RMySQL)
+library(DBI)
+library(kableExtra)
+library(dplyr)
+library(tidyr)
+library(scales)
+library(lubridate)
+library(ggplot2)
+
+# Set options for better number formatting
+options(scipen = 999)
+```
+
+```{r database_connection}
+# Database connection parameters
+db_host <- ".f.aivencloud.com"
+db_port <- 15435
+db_name <- "defaultdb"
+db_user <- "avnadmin"
+db_password <- ""
+
+# Connect to MySQL database
+mydb <- dbConnect(
+  RMySQL::MySQL(),
+  user = db_user,
+  password = db_password,
+  dbname = db_name,
+  host = db_host,
+  port = db_port
+)
+```
+
+## Analysis by Restaurant
+
+```{r restaurant_analysis}
+# SQL query to analyze restaurant performance
+restaurant_query <- "
+SELECT 
+    r.RestaurantName AS Restaurant,
+    COUNT(v.VisitID) AS Total_Visits,
+    COUNT(DISTINCT v.CustomerID) AS Unique_Customers,
+    (SELECT COUNT(DISTINCT c2.CustomerID)
+     FROM Visits v2
+     INNER JOIN Customers c2 ON v2.CustomerID = c2.CustomerID
+     WHERE v2.RestaurantID = r.RestaurantID 
+     AND c2.LoyaltyMember = TRUE) AS Loyalty_Customers,
+    ROUND(IFNULL(SUM(v.FoodBill * (1 - v.DiscountApplied)), 0), 2) AS Food_Revenue,
+    ROUND(IFNULL(SUM(v.AlcoholBill * (1 - v.DiscountApplied)), 0), 2) AS Alcohol_Revenue,
+    ROUND(IFNULL(SUM((v.FoodBill + v.AlcoholBill) * (1 - v.DiscountApplied)), 0), 2) AS Total_Revenue
+FROM 
+    Restaurants r
+    LEFT JOIN Visits v ON r.RestaurantID = v.RestaurantID
+GROUP BY 
+    r.RestaurantID, r.RestaurantName
+ORDER BY 
+    Total_Revenue DESC
+"
+
+# Execute query and fetch results
+restaurant_data <- dbGetQuery(mydb, restaurant_query)
+
+# Format numbers for display
+restaurant_display <- restaurant_data %>%
+  mutate(
+    Food_Revenue = paste0("$", format(Food_Revenue, big.mark = ",", nsmall = 2)),
+    Alcohol_Revenue = paste0("$", format(Alcohol_Revenue, big.mark = ",", nsmall = 2)),
+    Total_Revenue = paste0("$", format(Total_Revenue, big.mark = ",", nsmall = 2))
+  )
+
+# Create table with reduced column widths
+restaurant_display %>%
+  kable(
+    caption = "Restaurant Performance Summary (Revenue in thousands)",
+    col.names = c("Restaurant", "Visits", "Unique\nCust.", "Loyalty\nMemb.", 
+                  "Food\nRev.", "Alcohol\nRev.", "Total\nRev."),
+    align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'),
+    format = "latex",
+    booktabs = TRUE,
+    linesep = ""
+  ) %>%
+  kable_styling(
+    latex_options = c("scale_down", "hold_position"),
+    font_size = 8,
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  column_spec(1, width = "3.5cm") %>%
+  column_spec(2:7, width = "1.5cm")
+```
+
+*Note: Revenue figures exclude tips and discounts*
+
+\newpage
+## Sales & Visit Analytics
+
+```{r sales_analytics}
+# Get current year and calculate prior 2 years dynamically
+current_date <- Sys.Date()
+current_year <- year(current_date)
+start_year <- current_year - 2
+end_year <- current_year - 1
+
+# SQL query for sales analytics
+sales_query <- sprintf("
+SELECT 
+    r.RestaurantName AS Restaurant,
+    ROUND(SUM((v.FoodBill + v.AlcoholBill) * (1 - v.DiscountApplied)), 2) AS Total_Revenue,
+    ROUND(AVG((v.FoodBill + v.AlcoholBill) * (1 - v.DiscountApplied)), 2) AS Avg_Per_Party,
+    ROUND(AVG(v.PartySize), 2) AS Avg_Party_Size,
+    COUNT(v.VisitID) AS Visit_Count
+FROM 
+    Restaurants r
+    LEFT JOIN Visits v ON r.RestaurantID = v.RestaurantID
+WHERE 
+    YEAR(v.VisitDate) BETWEEN %d AND %d
+GROUP BY 
+    r.RestaurantID, r.RestaurantName
+ORDER BY 
+    Total_Revenue DESC
+", start_year, end_year)
+
+# Execute query
+sales_data <- dbGetQuery(mydb, sales_query)
+
+# Check if we have data
+if(nrow(sales_data) > 0) {
+  sales_display <- sales_data %>%
+    head(10) %>%  # Top 10 restaurants
+    mutate(
+      Total_Revenue = paste0("$", format(Total_Revenue, big.mark = ",", nsmall = 2)),
+      Avg_Per_Party = paste0("$", format(Avg_Per_Party, big.mark = ",", nsmall = 2)),
+      Avg_Party_Size = format(Avg_Party_Size, nsmall = 1),
+      Visit_Count = format(Visit_Count, big.mark = ",")
+    )
+  
+  # Create table with restaurants as rows (avoids width issues)
+  sales_display %>%
+    kable(
+      caption = paste0("Sales \\& Visit Analytics (", start_year, "-", end_year, ")"),
+      col.names = c("Restaurant", "Total Revenue", "Avg Per Party", "Avg Party Size", "Total Visits"),
+      align = c('l', 'r', 'r', 'r', 'r')
+    ) %>%
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE,
+      position = "center"
+    ) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(1, bold = TRUE)
+} else {
+  cat("No data available for the specified period")
+}
+```
+
+*Analysis period: `r paste(start_year, "-", end_year)`*
+
+## Trend by Year for Florida
+
+```{r florida-trend, fig.width=10, fig.height=6}
+# Query for Florida restaurant revenue by year
+florida_trend <- dbGetQuery(mydb, "
+  SELECT 
+    YEAR(v.VisitDate) as Year,
+    SUM(v.FoodBill * (1 - v.DiscountApplied)) as FoodRevenue,
+    SUM(v.AlcoholBill * (1 - v.DiscountApplied)) as AlcoholRevenue,
+    SUM((v.FoodBill + v.AlcoholBill) * (1 - v.DiscountApplied)) as TotalRevenue
+  FROM Visits v
+  JOIN Restaurants r ON v.RestaurantID = r.RestaurantID
+  WHERE r.State = 'FL' OR r.State = 'Florida'
+  GROUP BY YEAR(v.VisitDate)
+  ORDER BY Year
+")
+
+# Create line chart
+if (nrow(florida_trend) > 0) {
+  # Create the plot using ggplot2
+  p <- ggplot(florida_trend, aes(x = Year, y = TotalRevenue)) +
+    geom_line(color = "#4472C4", size = 2) +
+    geom_point(color = "#4472C4", size = 4) +
+    geom_text(aes(label = paste0("$", format(round(TotalRevenue, 0), big.mark = ","))),
+              vjust = -1.5, size = 3.5) +
+    scale_y_continuous(labels = dollar_format(scale = 0.001, suffix = "K"),
+                       expand = expansion(mult = c(0.1, 0.15)),
+                       limits = c(0, NA)) +
+    scale_x_continuous(breaks = florida_trend$Year) +
+    labs(title = "Total Revenue Trend for Florida Restaurants",
+         subtitle = "Combined Food and Alcohol Revenue by Year",
+         x = "Year",
+         y = "Total Revenue",
+         caption = paste("Data as of", format(Sys.Date(), "%B %d, %Y"))) +
+    theme_classic() +
+    theme(
+      plot.title = element_text(size = 16, face = "bold", hjust = 0.5),
+      plot.subtitle = element_text(size = 12, hjust = 0.5),
+      axis.title = element_text(size = 12, face = "bold"),
+      axis.text = element_text(size = 10),
+      axis.line = element_line(size = 1),
+      panel.grid.major.y = element_line(color = "gray90", linetype = "dashed"),
+      plot.caption = element_text(size = 8, face = "italic")
+    )
+  
+  print(p)
+  
+} else {
+  cat("No data available for Florida restaurants")
+}
+```
+
+```{r florida-summary, results='asis'}
+# Create summary table for Florida
+if (nrow(florida_trend) > 0) {
+  # Calculate year-over-year changes
+  florida_summary <- florida_trend %>%
+    mutate(
+      YoY_Change = TotalRevenue - lag(TotalRevenue),
+      YoY_Percent = round((YoY_Change / lag(TotalRevenue)) * 100, 1)
+    )
+  
+  # Format for display
+  florida_display <- florida_summary %>%
+    mutate(
+      FoodRevenue = paste0("$", format(round(FoodRevenue), big.mark = ",")),
+      AlcoholRevenue = paste0("$", format(round(AlcoholRevenue), big.mark = ",")),
+      TotalRevenue = paste0("$", format(round(TotalRevenue), big.mark = ",")),
+      YoY_Change = ifelse(is.na(YoY_Change), "-",
+                         paste0(ifelse(YoY_Change > 0, "+", ""),
+                               "$", format(round(YoY_Change), big.mark = ","))),
+      YoY_Percent = ifelse(is.na(YoY_Percent), "—",
+                          paste0(ifelse(YoY_Percent > 0, "+", ""), YoY_Percent, "%"))
+    ) %>%
+    select(Year, FoodRevenue, AlcoholRevenue, TotalRevenue, YoY_Change, YoY_Percent)
+  
+  # Display table
+  florida_display %>%
+    kable(
+      caption = "Florida Revenue Breakdown by Year",
+      col.names = c("Year", "Food Revenue", "Alcohol Revenue", 
+                   "Total Revenue", "YoY Change", "YoY %"),
+      align = c('c', 'r', 'r', 'r', 'r', 'r')
+    ) %>%
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE,
+      position = "center"
+    ) %>%
+    row_spec(0, bold = TRUE) %>%
+    column_spec(4, bold = TRUE)
+  
+  # Add summary statistics
+  cat("\n")
+  cat("**Summary Statistics:**\n\n")
+  cat(paste("- Total Years Analyzed:", nrow(florida_trend), "\n"))
+  cat(paste("- Average Annual Revenue: $", 
+            format(round(mean(florida_summary$TotalRevenue), 2), big.mark = ","), "\n"))
+  cat(paste("- Peak Revenue Year:", florida_trend$Year[which.max(florida_trend$TotalRevenue)], "\n"))
+  cat(paste("- Total Revenue (All Years): $",
+            format(round(sum(florida_trend$TotalRevenue), 2), big.mark = ","), "\n"))
+  
+  # Calculate growth rate if we have more than one year
+  if(nrow(florida_trend) > 1) {
+    overall_growth <- ((florida_trend$TotalRevenue[nrow(florida_trend)] - 
+                       florida_trend$TotalRevenue[1]) / 
+                       florida_trend$TotalRevenue[1]) * 100
+    cat(paste("- Overall Growth Rate:", sprintf("%.1f%%", overall_growth), "\n"))
+  }
+}
+```
+
+\newpage
+
+## Appendix: Database Summary
+
+
+```{r appendix, results='asis'}
+# Get summary statistics from database
+summary_stats <- dbGetQuery(mydb, "
+  SELECT 
+    (SELECT COUNT(DISTINCT RestaurantID) FROM Restaurants) as TotalRestaurants,
+    (SELECT COUNT(DISTINCT CustomerID) FROM Customers) as TotalCustomers,
+    (SELECT COUNT(DISTINCT ServerEmpID) FROM Servers) as TotalServers,
+    COUNT(*) as TotalVisits,
+    MIN(VisitDate) as EarliestVisit,
+    MAX(VisitDate) as LatestVisit,
+    SUM(FoodBill + AlcoholBill) as TotalRevenue,
+    AVG(FoodBill + AlcoholBill) as AvgRevenue
+  FROM Visits
+")
+
+# Get state distribution
+state_dist <- dbGetQuery(mydb, "
+  SELECT 
+    r.State,
+    COUNT(DISTINCT r.RestaurantID) as RestaurantCount,
+    COUNT(v.VisitID) as VisitCount,
+    SUM(v.FoodBill + v.AlcoholBill) as Revenue
+  FROM Restaurants r
+  LEFT JOIN Visits v ON r.RestaurantID = v.RestaurantID
+  GROUP BY r.State
+  ORDER BY Revenue DESC
+")
+
+# Display summary
+cat("**Database Overview:**\n\n")
+cat(paste("- Total Restaurants:", summary_stats$TotalRestaurants, "\n"))
+cat(paste("- Total Customers:", summary_stats$TotalCustomers, "\n"))
+cat(paste("- Total Servers:", summary_stats$TotalServers, "\n"))
+cat(paste("- Total Visits:", format(summary_stats$TotalVisits, big.mark = ","), "\n"))
+cat(paste("- Date Range:", summary_stats$EarliestVisit, "to", summary_stats$LatestVisit, "\n"))
+cat(paste("- Total Revenue: $", format(round(summary_stats$TotalRevenue, 2), big.mark = ","), "\n"))
+cat(paste("- Average Revenue per Visit: $", format(round(summary_stats$AvgRevenue, 2), big.mark = ","), "\n"))
+
+# Display state distribution table
+cat("\n**Restaurant Distribution by State:**\n\n")
+
+
+state_display <- state_dist %>%
+  mutate(
+    Revenue = paste0("$", format(round(Revenue), big.mark = ","))
+  ) %>%
+  head(10)  # Show top 10 states
+
+state_display %>%
+  kable(
+    col.names = c("State", "Restaurants", "Visits", "Total Revenue"),
+    align = c('l', 'r', 'r', 'r')
+  ) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover", "condensed"),
+    full_width = FALSE,
+    position = "center"
+  ) %>%
+  row_spec(0, bold = TRUE)
+```
+
+```{r cleanup, echo=FALSE, include=FALSE, results='asis'}
+# Close database connection
+dbDisconnect(mydb)
+```

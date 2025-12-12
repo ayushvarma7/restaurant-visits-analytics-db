@@ -1,0 +1,92 @@
+# ==================== R Project Files ====================
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# ==================== Sensitive Configuration ====================
+# Database credentials - NEVER commit these
+config/db_config.R
+*_credentials.R
+*_secrets.R
+.env
+.env.local
+
+# ==================== Data Files ====================
+# Large data files - provide download instructions instead
+data/*.csv
+data/*.sqlitedb
+data/*.sqlite
+data/*.db
+!data/.gitkeep
+
+# Compressed data
+*.zip
+*.gz
+*.tar
+*.7z
+
+# ==================== Generated Output ====================
+# PDF reports (include samples in docs/ instead)
+reports/*.pdf
+reports/*.html
+
+# R Markdown intermediates
+*.knit.md
+*_cache/
+*_files/
+
+# ==================== IDE and Editor ====================
+# VS Code
+.vscode/
+*.code-workspace
+
+# RStudio
+.Rproj.user/
+
+# JetBrains
+.idea/
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# ==================== Operating System ====================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ==================== Logs and Temporary Files ====================
+*.log
+logs/
+tmp/
+temp/
+
+# ==================== Package Files ====================
+# R package build artifacts
+*.tar.gz
+*.Rcheck/
+
+# ==================== Miscellaneous ====================
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Lock files
+*.lock
+packrat/lib*/
+renv/library/
