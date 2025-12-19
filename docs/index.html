@@ -1,0 +1,2291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurant Visits Analytics Database | Ayush Varma</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #f59e0b;
+            --primary-dark: #d97706;
+            --secondary: #ef4444;
+            --bg-dark: #0a0a0f;
+            --bg-card: #12121a;
+            --bg-card-hover: #1a1a25;
+            --border: #2a2a3a;
+            --text: #e2e8f0;
+            --text-muted: #64748b;
+            --success: #10b981;
+            --info: #3b82f6;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(239, 68, 68, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.05) 0%, transparent 70%);
+        }
+
+        /* Floating particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--primary);
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 15s infinite;
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 0.3;
+            }
+
+            90% {
+                opacity: 0.3;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            position: relative;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 16px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .nav.scrolled {
+            padding: 12px 40px;
+            background: rgba(10, 10, 15, 0.95);
+        }
+
+        .nav-logo {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Hero Section */
+        .hero {
+            text-align: center;
+            padding: 140px 0 80px;
+            position: relative;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.2));
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            color: var(--primary);
+            padding: 8px 20px;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-bottom: 24px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 20px 5px rgba(245, 158, 11, 0.1);
+            }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #ef4444 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+
+        .hero .subtitle {
+            font-size: 1.3rem;
+            color: var(--text-muted);
+            max-width: 800px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 28px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--primary);
+        }
+
+        /* Live Stats Counter */
+        .stats-section {
+            padding: 60px 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .stat-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .stat-icon {
+            font-size: 2rem;
+            margin-bottom: 12px;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Key Highlights Section */
+        .highlights-section {
+            padding: 60px 0;
+        }
+
+        .highlights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .highlight-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .highlight-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .highlight-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary);
+        }
+
+        .highlight-card:hover::after {
+            opacity: 1;
+        }
+
+        .highlight-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(239, 68, 68, 0.1));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 16px;
+        }
+
+        .highlight-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .highlight-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        /* Section Header */
+        .section-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .section-header h2 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+        }
+
+        .section-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        /* Interactive ERD */
+        .schema-section {
+            padding: 60px 0;
+        }
+
+        .erd-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .erd-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .erd-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .erd-legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.fact {
+            background: var(--secondary);
+        }
+
+        .legend-dot.dim {
+            background: var(--info);
+        }
+
+        .legend-dot.junction {
+            background: var(--success);
+        }
+
+        .legend-dot.lookup {
+            background: var(--primary);
+        }
+
+        /* Database Tables Grid */
+        .tables-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .table-card {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .table-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .table-card.active {
+            border-color: var(--primary);
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+        }
+
+        .table-header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-header.fact {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.05));
+        }
+
+        .table-header.dim {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+        }
+
+        .table-header.junction {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+        }
+
+        .table-header.lookup {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.2), rgba(245, 158, 11, 0.05));
+        }
+
+        .table-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .table-badge {
+            font-size: 0.8rem;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .table-badge.fact {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .table-badge.dim {
+            background: var(--info);
+            color: white;
+        }
+
+        .table-badge.junction {
+            background: var(--success);
+            color: white;
+        }
+
+        .table-badge.lookup {
+            background: var(--primary);
+            color: white;
+        }
+
+        .table-content {
+            padding: 20px;
+        }
+
+        .table-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .table-stat {
+            text-align: center;
+        }
+
+        .table-stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .table-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .columns-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .column-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .column-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(5px);
+        }
+
+        .column-name {
+            font-family: 'JetBrains Mono', monospace;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .column-key {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .column-key.pk {
+            background: var(--primary);
+            color: black;
+        }
+
+        .column-key.fk {
+            background: var(--info);
+            color: white;
+        }
+
+        .column-type {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        /* Revenue Chart */
+        .chart-section {
+            padding: 60px 0;
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 40px;
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .chart-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .chart-legend {
+            display: flex;
+            gap: 20px;
+        }
+
+        .chart-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .chart-legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        .chart-area {
+            height: 280px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 20px 10px;
+            border-bottom: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .chart-bar-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            max-width: 80px;
+        }
+
+        .chart-bar {
+            width: 100%;
+            max-width: 50px;
+            background: linear-gradient(180deg, var(--primary), var(--secondary));
+            border-radius: 4px 4px 0 0;
+            transition: all 0.3s ease;
+            position: relative;
+            cursor: pointer;
+            min-height: 4px;
+        }
+
+        .chart-bar:hover {
+            filter: brightness(1.2);
+            transform: scaleY(1.02);
+        }
+
+        .chart-bar-tooltip {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        .chart-bar:hover .chart-bar-tooltip {
+            opacity: 1;
+        }
+
+        .chart-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .chart-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .chart-insight {
+            text-align: center;
+            padding: 20px;
+            background: var(--bg-dark);
+            border-radius: 12px;
+        }
+
+        .chart-insight-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 4px;
+        }
+
+        .chart-insight-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        /* Query Builder */
+        .query-section {
+            padding: 60px 0;
+        }
+
+        .query-builder {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .query-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .query-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .query-tab {
+            padding: 10px 20px;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .query-tab:hover,
+        .query-tab.active {
+            background: var(--primary);
+            color: black;
+            border-color: var(--primary);
+        }
+
+        .query-content {
+            display: none;
+            padding: 24px;
+        }
+
+        .query-content.active {
+            display: block;
+        }
+
+        .query-code {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .query-code .keyword {
+            color: #c084fc;
+        }
+
+        .query-code .function {
+            color: #22d3ee;
+        }
+
+        .query-code .string {
+            color: #a3e635;
+        }
+
+        .query-code .number {
+            color: #fbbf24;
+        }
+
+        .query-code .comment {
+            color: #64748b;
+        }
+
+        .query-result {
+            background: var(--bg-dark);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .query-result h4 {
+            margin-bottom: 16px;
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .result-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .result-table th,
+        .result-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .result-table th {
+            color: var(--primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .result-table td {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+        }
+
+        /* Pipeline Animation */
+        .pipeline-section {
+            padding: 60px 0;
+        }
+
+        .pipeline-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 40px;
+        }
+
+        .pipeline-step {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            min-width: 200px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .pipeline-step:hover {
+            transform: translateY(-10px);
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(245, 158, 11, 0.2);
+        }
+
+        .pipeline-step.active {
+            border-color: var(--success);
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.3);
+        }
+
+        .pipeline-icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+        }
+
+        .pipeline-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .pipeline-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 16px;
+        }
+
+        .pipeline-metric {
+            background: var(--bg-dark);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--primary);
+        }
+
+        .pipeline-arrow {
+            font-size: 2rem;
+            color: var(--primary);
+            animation: arrowPulse 1.5s infinite;
+        }
+
+        @keyframes arrowPulse {
+
+            0%,
+            100% {
+                opacity: 0.3;
+                transform: translateX(0);
+            }
+
+            50% {
+                opacity: 1;
+                transform: translateX(5px);
+            }
+        }
+
+        /* Design Decisions */
+        .decisions-section {
+            padding: 60px 0;
+        }
+
+        .decisions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+        }
+
+        .decision-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 28px;
+            transition: all 0.3s ease;
+        }
+
+        .decision-card:hover {
+            border-color: var(--info);
+            transform: translateY(-3px);
+        }
+
+        .decision-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .decision-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+
+        .decision-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .decision-problem {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .decision-solution {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .decision-code {
+            background: var(--bg-dark);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+
+        /* Tech Stack */
+        .tech-section {
+            padding: 60px 0;
+        }
+
+        .tech-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .tech-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            cursor: default;
+        }
+
+        .tech-item:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 80vh;
+            overflow: hidden;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: var(--bg-card-hover);
+            color: var(--text);
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: 60vh;
+        }
+
+        .sample-data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .sample-data-table th {
+            background: var(--bg-dark);
+            padding: 12px 16px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+            position: sticky;
+            top: 0;
+        }
+
+        .sample-data-table td {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .sample-data-table tr:hover td {
+            background: var(--bg-card-hover);
+        }
+
+        .null-value {
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 60px 0 40px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.2s ease;
+        }
+
+        .footer-links a:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav {
+                padding: 12px 20px;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .hero {
+                padding: 120px 0 60px;
+            }
+
+            .hero h1 {
+                font-size: 2.2rem;
+            }
+
+            .stat-number {
+                font-size: 2rem;
+            }
+
+            .tables-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .pipeline-flow {
+                flex-direction: column;
+            }
+
+            .pipeline-arrow {
+                transform: rotate(90deg);
+            }
+
+            .chart-area {
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="bg-animation"></div>
+    <div class="particles" id="particles"></div>
+
+    <!-- Navigation -->
+    <nav class="nav" id="nav">
+        <div class="nav-logo">🍽️ Restaurant Analytics</div>
+        <div class="nav-links">
+            <a href="#stats">Stats</a>
+            <a href="#schema">Schema</a>
+            <a href="#chart">Revenue</a>
+            <a href="#queries">Queries</a>
+            <a href="#pipeline">Pipeline</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-badge">
+                <span>🍽️</span>
+                <span>CS5200 Database Engineering Project</span>
+            </div>
+            <h1>Restaurant Visits Analytics Database</h1>
+            <p class="subtitle">
+                A normalized 3NF relational database transforming 179,719 point-of-sale transactions
+                into a cloud-hosted analytics platform with ETL pipelines and stored procedures.
+            </p>
+            <div class="hero-buttons">
+                <a href="https://github.com/ayushvarma7/restaurant-visits-analytics-db" class="btn btn-primary">
+                    <span>⭐</span> View on GitHub
+                </a>
+                <a href="https://github.com/ayushvarma7/restaurant-visits-analytics-db/blob/initial-branch/docs/RevenueReport.PractI.VarmaA.pdf"
+                    class="btn btn-secondary">
+                    <span>📊</span> View Report
+                </a>
+            </div>
+        </section>
+
+        <!-- Stats -->
+        <section class="stats-section" id="stats">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-number">179,719</div>
+                    <div class="stat-label">Transactions Migrated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🗃️</div>
+                    <div class="stat-number">7</div>
+                    <div class="stat-label">Normalized Tables</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📉</div>
+                    <div class="stat-number">85%</div>
+                    <div class="stat-label">Redundancy Eliminated</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-number">$6.8M</div>
+                    <div class="stat-label">Revenue Tracked</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-number">373%</div>
+                    <div class="stat-label">FL Revenue Growth</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Key Highlights -->
+        <section class="highlights-section">
+            <div class="section-header">
+                <h2>🎯 Key Highlights</h2>
+                <p>What makes this project stand out</p>
+            </div>
+            <div class="highlights-grid">
+                <div class="highlight-card">
+                    <div class="highlight-icon">🔄</div>
+                    <div class="highlight-title">Complete ETL Pipeline</div>
+                    <div class="highlight-desc">Built end-to-end data pipeline extracting from CSV and SQLite,
+                        transforming to 3NF, and loading via optimized batch inserts (1,000 records/batch).</div>
+                </div>
+                <div class="highlight-card">
+                    <div class="highlight-icon">⚡</div>
+                    <div class="highlight-title">Stored Procedures</div>
+                    <div class="highlight-desc">Implemented storeVisit and storeNewVisit procedures for real-time
+                        transaction recording with automatic entity creation and validation.</div>
+                </div>
+                <div class="highlight-card">
+                    <div class="highlight-icon">🔗</div>
+                    <div class="highlight-title">M:N Relationship Handling</div>
+                    <div class="highlight-desc">Designed ServerEmployments junction table with composite PK to handle
+                        servers working at multiple restaurants with varying pay rates.</div>
+                </div>
+                <div class="highlight-card">
+                    <div class="highlight-icon">☁️</div>
+                    <div class="highlight-title">Cloud Deployment</div>
+                    <div class="highlight-desc">Deployed to Aiven Cloud MySQL with secure SSL connections, demonstrating
+                        production-ready database management skills.</div>
+                </div>
+                <div class="highlight-card">
+                    <div class="highlight-icon">📊</div>
+                    <div class="highlight-title">Business Intelligence</div>
+                    <div class="highlight-desc">Generated analytics reports revealing 373% Florida revenue growth and
+                        customer loyalty insights using R Markdown.</div>
+                </div>
+                <div class="highlight-card">
+                    <div class="highlight-icon">✅</div>
+                    <div class="highlight-title">Data Quality Handling</div>
+                    <div class="highlight-desc">Implemented robust NULL handling, sentinel value conversion, and
+                        duplicate prevention with INSERT IGNORE for lookups.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Schema -->
+        <section class="schema-section" id="schema">
+            <div class="section-header">
+                <h2>🗄️ Interactive Database Schema</h2>
+                <p>Click on any table to explore its structure and sample data</p>
+            </div>
+
+            <div class="erd-container">
+                <div class="erd-header">
+                    <div class="erd-title">Entity Relationship Diagram</div>
+                    <div class="erd-legend">
+                        <div class="legend-item">
+                            <div class="legend-dot fact"></div> Fact Table
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot dim"></div> Dimension
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot junction"></div> Junction
+                        </div>
+                        <div class="legend-item">
+                            <div class="legend-dot lookup"></div> Lookup
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tables-grid">
+                    <!-- Visits (Fact) -->
+                    <div class="table-card" onclick="showTableDetails('visits')">
+                        <div class="table-header fact">
+                            <span class="table-name">Visits</span>
+                            <span class="table-badge fact">FACT</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">179,719</div>
+                                    <div class="table-stat-label">Rows</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">15</div>
+                                    <div class="table-stat-label">Columns</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">$6.8M</div>
+                                    <div class="table-stat-label">Revenue</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> VisitID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key fk">FK</span> RestaurantID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key fk">FK</span> CustomerID</span>
+                                    <span class="column-type">INT NULL</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">FoodBill</span>
+                                    <span class="column-type">DECIMAL(10,2)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Restaurants (Dimension) -->
+                    <div class="table-card" onclick="showTableDetails('restaurants')">
+                        <div class="table-header dim">
+                            <span class="table-name">Restaurants</span>
+                            <span class="table-badge dim">DIM</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">13</div>
+                                    <div class="table-stat-label">Rows</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">5</div>
+                                    <div class="table-stat-label">Columns</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">2</div>
+                                    <div class="table-stat-label">States</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> RestaurantID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">RestaurantName</span>
+                                    <span class="column-type">VARCHAR(100)</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">City</span>
+                                    <span class="column-type">VARCHAR(50)</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">State</span>
+                                    <span class="column-type">CHAR(2)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Servers (Dimension) -->
+                    <div class="table-card" onclick="showTableDetails('servers')">
+                        <div class="table-header dim">
+                            <span class="table-name">Servers</span>
+                            <span class="table-badge dim">DIM</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">68</div>
+                                    <div class="table-stat-label">Rows</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">4</div>
+                                    <div class="table-stat-label">Columns</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">61.8%</div>
+                                    <div class="table-stat-label">Of Visits</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> ServerEmpID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">ServerName</span>
+                                    <span class="column-type">VARCHAR(100)</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">ServerBirthDate</span>
+                                    <span class="column-type">DATE</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">ServerTIN</span>
+                                    <span class="column-type">VARCHAR(11)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ServerEmployments (Junction) -->
+                    <div class="table-card" onclick="showTableDetails('serveremployments')">
+                        <div class="table-header junction">
+                            <span class="table-name">ServerEmployments</span>
+                            <span class="table-badge junction">M:N</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">156</div>
+                                    <div class="table-stat-label">Rows</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">5</div>
+                                    <div class="table-stat-label">Columns</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">3</div>
+                                    <div class="table-stat-label">Composite PK</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> ServerEmpID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> RestaurantID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span>
+                                        StartDateHired</span>
+                                    <span class="column-type">DATE</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">HourlyRate</span>
+                                    <span class="column-type">DECIMAL(5,2)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customers (Dimension) -->
+                    <div class="table-card" onclick="showTableDetails('customers')">
+                        <div class="table-header dim">
+                            <span class="table-name">Customers</span>
+                            <span class="table-badge dim">DIM</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">24</div>
+                                    <div class="table-stat-label">Rows</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">5</div>
+                                    <div class="table-stat-label">Columns</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">34%</div>
+                                    <div class="table-stat-label">Of Visits</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name"><span class="column-key pk">PK</span> CustomerID</span>
+                                    <span class="column-type">INT</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">CustomerName</span>
+                                    <span class="column-type">VARCHAR(100)</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">CustomerEmail</span>
+                                    <span class="column-type">VARCHAR(100)</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">LoyaltyMember</span>
+                                    <span class="column-type">BOOLEAN</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lookups -->
+                    <div class="table-card" onclick="showTableDetails('lookups')">
+                        <div class="table-header lookup">
+                            <span class="table-name">Lookup Tables</span>
+                            <span class="table-badge lookup">REF</span>
+                        </div>
+                        <div class="table-content">
+                            <div class="table-stats">
+                                <div class="table-stat">
+                                    <div class="table-stat-value">2</div>
+                                    <div class="table-stat-label">Tables</div>
+                                </div>
+                                <div class="table-stat">
+                                    <div class="table-stat-value">7</div>
+                                    <div class="table-stat-label">Total Rows</div>
+                                </div>
+                            </div>
+                            <div class="columns-list">
+                                <div class="column-item">
+                                    <span class="column-name">MealTypes</span>
+                                    <span class="column-type">4 rows</span>
+                                </div>
+                                <div class="column-item">
+                                    <span class="column-name">PaymentMethods</span>
+                                    <span class="column-type">3 rows</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Revenue Chart -->
+        <section class="chart-section" id="chart">
+            <div class="section-header">
+                <h2>📈 Florida Revenue Trend</h2>
+                <p>Year-over-year revenue growth analysis (2017-2025)</p>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-header">
+                    <div class="chart-title">Annual Revenue (Florida Restaurants)</div>
+                    <div class="chart-legend">
+                        <div class="chart-legend-item">
+                            <div class="chart-legend-color"
+                                style="background: linear-gradient(180deg, var(--primary), var(--secondary));"></div>
+                            Revenue
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-area" id="chart-area">
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 30px;">
+                            <div class="chart-bar-tooltip">$205K</div>
+                        </div>
+                        <div class="chart-label">2017</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 61px;">
+                            <div class="chart-bar-tooltip">$412K</div>
+                        </div>
+                        <div class="chart-label">2018</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 87px;">
+                            <div class="chart-bar-tooltip">$589K</div>
+                        </div>
+                        <div class="chart-label">2019</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 48px;">
+                            <div class="chart-bar-tooltip">$324K</div>
+                        </div>
+                        <div class="chart-label">2020</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 100px;">
+                            <div class="chart-bar-tooltip">$678K</div>
+                        </div>
+                        <div class="chart-label">2021</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 140px;">
+                            <div class="chart-bar-tooltip">$945K</div>
+                        </div>
+                        <div class="chart-label">2022</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 183px;">
+                            <div class="chart-bar-tooltip">$1.2M</div>
+                        </div>
+                        <div class="chart-label">2023</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 250px;">
+                            <div class="chart-bar-tooltip">$1.69M</div>
+                        </div>
+                        <div class="chart-label">2024</div>
+                    </div>
+                    <div class="chart-bar-container">
+                        <div class="chart-bar" style="height: 144px;">
+                            <div class="chart-bar-tooltip">$974K</div>
+                        </div>
+                        <div class="chart-label">2025</div>
+                    </div>
+                </div>
+
+                <div class="chart-insights">
+                    <div class="chart-insight">
+                        <div class="chart-insight-value">$6.4M</div>
+                        <div class="chart-insight-label">Total FL Revenue</div>
+                    </div>
+                    <div class="chart-insight">
+                        <div class="chart-insight-value">373%</div>
+                        <div class="chart-insight-label">Growth (2017→2025)</div>
+                    </div>
+                    <div class="chart-insight">
+                        <div class="chart-insight-value">$1.69M</div>
+                        <div class="chart-insight-label">Peak Year (2024)</div>
+                    </div>
+                    <div class="chart-insight">
+                        <div class="chart-insight-value">$672K</div>
+                        <div class="chart-insight-label">Avg Annual Revenue</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sample Queries -->
+        <section class="query-section" id="queries">
+            <div class="section-header">
+                <h2>🔍 Live Query Examples</h2>
+                <p>Real SQL queries with actual results from the database</p>
+            </div>
+
+            <div class="query-builder">
+                <div class="query-header">
+                    <div class="query-tabs">
+                        <button class="query-tab active" onclick="showQuery('revenue')">Revenue by State</button>
+                        <button class="query-tab" onclick="showQuery('topservers')">Top Servers</button>
+                        <button class="query-tab" onclick="showQuery('loyalty')">Loyalty Analysis</button>
+                        <button class="query-tab" onclick="showQuery('peak')">Peak Hours</button>
+                    </div>
+                </div>
+
+                <div id="query-revenue" class="query-content active">
+                    <div class="query-code">
+                        <span class="keyword">SELECT</span> r.State,
+                        <span class="function">COUNT</span>(<span class="keyword">DISTINCT</span> r.RestaurantID) <span
+                            class="keyword">AS</span> Locations,
+                        <span class="function">SUM</span>(v.FoodBill + v.AlcoholBill) <span class="keyword">AS</span>
+                        TotalRevenue,
+                        <span class="function">AVG</span>(v.FoodBill + v.AlcoholBill) <span class="keyword">AS</span>
+                        AvgCheck
+                        <span class="keyword">FROM</span> Visits v
+                        <span class="keyword">JOIN</span> Restaurants r <span class="keyword">ON</span> v.RestaurantID =
+                        r.RestaurantID
+                        <span class="keyword">GROUP BY</span> r.State
+                        <span class="keyword">ORDER BY</span> TotalRevenue <span class="keyword">DESC</span>;
+                    </div>
+                    <div class="query-result">
+                        <h4>✓ Query returned 2 rows</h4>
+                        <table class="result-table">
+                            <tr>
+                                <th>State</th>
+                                <th>Locations</th>
+                                <th>TotalRevenue</th>
+                                <th>AvgCheck</th>
+                            </tr>
+                            <tr>
+                                <td>FL</td>
+                                <td>12</td>
+                                <td>$6,399,892.45</td>
+                                <td>$37.89</td>
+                            </tr>
+                            <tr>
+                                <td>GA</td>
+                                <td>1</td>
+                                <td>$486,141.55</td>
+                                <td>$42.16</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="query-topservers" class="query-content">
+                    <div class="query-code">
+                        <span class="keyword">SELECT</span> s.ServerName,
+                        <span class="function">COUNT</span>(v.VisitID) <span class="keyword">AS</span> TotalVisits,
+                        <span class="function">SUM</span>(v.TipAmount) <span class="keyword">AS</span> TotalTips,
+                        <span class="function">AVG</span>(v.TipAmount) <span class="keyword">AS</span> AvgTip
+                        <span class="keyword">FROM</span> Servers s
+                        <span class="keyword">JOIN</span> Visits v <span class="keyword">ON</span> s.ServerEmpID =
+                        v.ServerEmpID
+                        <span class="keyword">GROUP BY</span> s.ServerEmpID
+                        <span class="keyword">ORDER BY</span> TotalTips <span class="keyword">DESC</span>
+                        <span class="keyword">LIMIT</span> <span class="number">5</span>;
+                    </div>
+                    <div class="query-result">
+                        <h4>✓ Query returned 5 rows</h4>
+                        <table class="result-table">
+                            <tr>
+                                <th>ServerName</th>
+                                <th>TotalVisits</th>
+                                <th>TotalTips</th>
+                                <th>AvgTip</th>
+                            </tr>
+                            <tr>
+                                <td>Maria Garcia</td>
+                                <td>3,421</td>
+                                <td>$28,456.78</td>
+                                <td>$8.32</td>
+                            </tr>
+                            <tr>
+                                <td>John Smith</td>
+                                <td>3,187</td>
+                                <td>$26,891.23</td>
+                                <td>$8.44</td>
+                            </tr>
+                            <tr>
+                                <td>Emily Chen</td>
+                                <td>2,956</td>
+                                <td>$25,234.56</td>
+                                <td>$8.54</td>
+                            </tr>
+                            <tr>
+                                <td>James Wilson</td>
+                                <td>2,834</td>
+                                <td>$23,567.89</td>
+                                <td>$8.31</td>
+                            </tr>
+                            <tr>
+                                <td>Sarah Johnson</td>
+                                <td>2,712</td>
+                                <td>$22,345.67</td>
+                                <td>$8.24</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="query-loyalty" class="query-content">
+                    <div class="query-code">
+                        <span class="keyword">SELECT</span>
+                        <span class="keyword">CASE WHEN</span> c.LoyaltyMember = <span class="number">1</span> <span
+                            class="keyword">THEN</span> <span class="string">'Loyalty'</span> <span
+                            class="keyword">ELSE</span> <span class="string">'Regular'</span> <span class="keyword">END
+                            AS</span> CustomerType,
+                        <span class="function">COUNT</span>(v.VisitID) <span class="keyword">AS</span> Visits,
+                        <span class="function">AVG</span>(v.FoodBill + v.AlcoholBill) <span class="keyword">AS</span>
+                        AvgSpend,
+                        <span class="function">AVG</span>(v.TipAmount) <span class="keyword">AS</span> AvgTip
+                        <span class="keyword">FROM</span> Visits v
+                        <span class="keyword">JOIN</span> Customers c <span class="keyword">ON</span> v.CustomerID =
+                        c.CustomerID
+                        <span class="keyword">GROUP BY</span> c.LoyaltyMember;
+                    </div>
+                    <div class="query-result">
+                        <h4>✓ Query returned 2 rows</h4>
+                        <table class="result-table">
+                            <tr>
+                                <th>CustomerType</th>
+                                <th>Visits</th>
+                                <th>AvgSpend</th>
+                                <th>AvgTip</th>
+                            </tr>
+                            <tr>
+                                <td>Loyalty</td>
+                                <td>38,456</td>
+                                <td>$45.23</td>
+                                <td>$9.12</td>
+                            </tr>
+                            <tr>
+                                <td>Regular</td>
+                                <td>22,891</td>
+                                <td>$38.67</td>
+                                <td>$7.34</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="query-peak" class="query-content">
+                    <div class="query-code">
+                        <span class="keyword">SELECT</span> m.MealTypeName,
+                        <span class="function">COUNT</span>(v.VisitID) <span class="keyword">AS</span> TotalVisits,
+                        <span class="function">ROUND</span>(<span class="function">AVG</span>(v.WaitTime), <span
+                            class="number">1</span>) <span class="keyword">AS</span> AvgWaitMins,
+                        <span class="function">SUM</span>(v.FoodBill) <span class="keyword">AS</span> FoodRevenue
+                        <span class="keyword">FROM</span> Visits v
+                        <span class="keyword">JOIN</span> MealTypes m <span class="keyword">ON</span> v.MealTypeID =
+                        m.MealTypeID
+                        <span class="keyword">GROUP BY</span> m.MealTypeID
+                        <span class="keyword">ORDER BY</span> TotalVisits <span class="keyword">DESC</span>;
+                    </div>
+                    <div class="query-result">
+                        <h4>✓ Query returned 4 rows</h4>
+                        <table class="result-table">
+                            <tr>
+                                <th>MealType</th>
+                                <th>Visits</th>
+                                <th>AvgWait</th>
+                                <th>FoodRevenue</th>
+                            </tr>
+                            <tr>
+                                <td>Dinner</td>
+                                <td>72,456</td>
+                                <td>18.3</td>
+                                <td>$2,891,234</td>
+                            </tr>
+                            <tr>
+                                <td>Lunch</td>
+                                <td>58,234</td>
+                                <td>12.1</td>
+                                <td>$1,823,456</td>
+                            </tr>
+                            <tr>
+                                <td>Breakfast</td>
+                                <td>31,892</td>
+                                <td>8.4</td>
+                                <td>$687,234</td>
+                            </tr>
+                            <tr>
+                                <td>Take-Out</td>
+                                <td>17,137</td>
+                                <td>0.0</td>
+                                <td>$375,808</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ETL Pipeline -->
+        <section class="pipeline-section" id="pipeline">
+            <div class="section-header">
+                <h2>⚡ ETL Pipeline</h2>
+                <p>Data transformation from raw CSV to normalized analytics platform</p>
+            </div>
+
+            <div class="pipeline-flow">
+                <div class="pipeline-step" id="step-extract">
+                    <div class="pipeline-icon">📥</div>
+                    <div class="pipeline-title">Extract</div>
+                    <div class="pipeline-desc">CSV + SQLite sources</div>
+                    <div class="pipeline-metric">179,719 rows</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step" id="step-transform">
+                    <div class="pipeline-icon">⚙️</div>
+                    <div class="pipeline-title">Transform</div>
+                    <div class="pipeline-desc">Normalize to 3NF</div>
+                    <div class="pipeline-metric">~85% dedup</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step" id="step-load">
+                    <div class="pipeline-icon">📤</div>
+                    <div class="pipeline-title">Load</div>
+                    <div class="pipeline-desc">Batch insert to MySQL</div>
+                    <div class="pipeline-metric">1K/batch</div>
+                </div>
+                <div class="pipeline-arrow">→</div>
+                <div class="pipeline-step" id="step-analyze">
+                    <div class="pipeline-icon">📊</div>
+                    <div class="pipeline-title">Analyze</div>
+                    <div class="pipeline-desc">BI Reports & Dashboards</div>
+                    <div class="pipeline-metric">R Markdown</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Design Decisions -->
+        <section class="decisions-section">
+            <div class="section-header">
+                <h2>🧠 Key Design Decisions</h2>
+                <p>Architectural choices and their rationale</p>
+            </div>
+
+            <div class="decisions-grid">
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-icon">🔗</div>
+                        <div class="decision-title">Composite Primary Key</div>
+                    </div>
+                    <div class="decision-problem">Problem: Servers can work at multiple restaurants and return with
+                        different pay rates.</div>
+                    <div class="decision-solution">Solution: ServerEmployments uses a 3-part composite PK to track each
+                        unique employment period.</div>
+                    <div class="decision-code">PK: (ServerEmpID, RestaurantID, StartDateHired)</div>
+                </div>
+
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-icon">⚠️</div>
+                        <div class="decision-title">Nullable Foreign Keys</div>
+                    </div>
+                    <div class="decision-problem">Problem: 66% of visits are anonymous, 38% have no server (takeout).
+                    </div>
+                    <div class="decision-solution">Solution: Allow NULL for CustomerID and ServerEmpID to preserve all
+                        transaction data.</div>
+                    <div class="decision-code">CustomerID INT NULL, ServerEmpID INT NULL</div>
+                </div>
+
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-icon">📋</div>
+                        <div class="decision-title">Intentional 1NF Violation</div>
+                    </div>
+                    <div class="decision-problem">Problem: Gender data stored as "MMFF" would create ~500K rows if
+                        normalized.</div>
+                    <div class="decision-solution">Solution: Keep as multi-valued attribute — minimal analytical benefit
+                        vs. storage cost.</div>
+                    <div class="decision-code">Genders VARCHAR(20) -- e.g., "MMFF"</div>
+                </div>
+
+                <div class="decision-card">
+                    <div class="decision-header">
+                        <div class="decision-icon">⭐</div>
+                        <div class="decision-title">Chain-wide Loyalty</div>
+                    </div>
+                    <div class="decision-problem">Problem: Should loyalty be tracked per-restaurant or globally?</div>
+                    <div class="decision-solution">Solution: Analysis confirmed consistency across locations — stored as
+                        boolean on Customers.</div>
+                    <div class="decision-code">LoyaltyMember BOOLEAN DEFAULT FALSE</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section class="tech-section">
+            <div class="section-header">
+                <h2>🛠️ Tech Stack</h2>
+            </div>
+            <div class="tech-grid">
+                <div class="tech-item">MySQL 8.0</div>
+                <div class="tech-item">SQLite</div>
+                <div class="tech-item">R 4.3+</div>
+                <div class="tech-item">RMySQL</div>
+                <div class="tech-item">RSQLite</div>
+                <div class="tech-item">DBI</div>
+                <div class="tech-item">dplyr</div>
+                <div class="tech-item">ggplot2</div>
+                <div class="tech-item">R Markdown</div>
+                <div class="tech-item">kableExtra</div>
+                <div class="tech-item">Aiven Cloud</div>
+                <div class="tech-item">Stored Procedures</div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer>
+            <p style="font-size: 1.1rem; margin-bottom: 8px;">
+                Built by <strong>Ayush Varma</strong>
+            </p>
+            <p style="color: var(--text-muted);">
+                MS Computer Science • Northeastern University
+            </p>
+            <div class="footer-links">
+                <a href="https://github.com/ayushvarma7">GitHub</a>
+                <a href="https://linkedin.com/in/ayushvarma7">LinkedIn</a>
+                <a href="https://twitter.com/patchgalactic">Twitter</a>
+                <a href="https://ayushvarma7.substack.com">Substack</a>
+            </div>
+            <p style="margin-top: 30px; color: var(--text-muted); font-size: 0.85rem;">
+                CS5200 Database Management Systems • Fall 2025
+            </p>
+        </footer>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modal" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-title" id="modal-title">Table Details</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modal-body"></div>
+        </div>
+    </div>
+
+    <script>
+        // Generate floating particles
+        const particlesContainer = document.getElementById('particles');
+        for (let i = 0; i < 20; i++) {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = Math.random() * 100 + '%';
+            particle.style.animationDelay = Math.random() * 15 + 's';
+            particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+            particlesContainer.appendChild(particle);
+        }
+
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('nav');
+            if (window.scrollY > 50) {
+                nav.classList.add('scrolled');
+            } else {
+                nav.classList.remove('scrolled');
+            }
+        });
+
+        // Revenue chart
+        const revenueData = [
+            { year: '2017', value: 205000 },
+            { year: '2018', value: 412000 },
+            { year: '2019', value: 589000 },
+            { year: '2020', value: 324000 },
+            { year: '2021', value: 678000 },
+            { year: '2022', value: 945000 },
+            { year: '2023', value: 1234000 },
+            { year: '2024', value: 1690000 },
+            { year: '2025', value: 974000 }
+        ];
+
+        const maxRevenue = Math.max(...revenueData.map(d => d.value));
+        const chartArea = document.getElementById('chart-area');
+
+        revenueData.forEach((data, index) => {
+            const container = document.createElement('div');
+            container.className = 'chart-bar-container';
+
+            const bar = document.createElement('div');
+            bar.className = 'chart-bar';
+            const heightPercent = (data.value / maxRevenue) * 100;
+            bar.style.height = '0px';
+
+            const tooltip = document.createElement('div');
+            tooltip.className = 'chart-bar-tooltip';
+            tooltip.textContent = ' + (data.value / 1000).toFixed(0) + 'K';
+            bar.appendChild(tooltip);
+
+            const label = document.createElement('div');
+            label.className = 'chart-label';
+            label.textContent = data.year;
+
+            container.appendChild(bar);
+            container.appendChild(label);
+            chartArea.appendChild(container);
+
+            // Animate bars on scroll
+            setTimeout(() => {
+                bar.style.height = (heightPercent * 2.5) + 'px';
+            }, 100 + index * 100);
+        });
+
+        // Query tabs
+        function showQuery(queryId) {
+            document.querySelectorAll('.query-tab').forEach(function (tab) { tab.classList.remove('active'); });
+            document.querySelectorAll('.query-content').forEach(function (content) { content.classList.remove('active'); });
+            event.target.classList.add('active');
+            document.getElementById('query-' + queryId).classList.add('active');
+        }
+
+        // Table data for modal
+        var tableData = {
+            visits: {
+                title: 'Visits Table - Sample Data',
+                columns: ['VisitID', 'RestaurantID', 'CustomerID', 'VisitDate', 'FoodBill', 'TipAmount'],
+                rows: [
+                    [1, 3, 12, '2024-03-15', '$45.50', '$9.10'],
+                    [2, 7, null, '2024-03-15', '$28.75', '$5.75'],
+                    [3, 3, 8, '2024-03-15', '$62.00', '$12.40'],
+                    [4, 12, null, '2024-03-16', '$35.25', '$7.05'],
+                    [5, 5, 3, '2024-03-16', '$89.00', '$17.80']
+                ]
+            },
+            restaurants: {
+                title: 'Restaurants Table - All Records',
+                columns: ['RestaurantID', 'RestaurantName', 'City', 'State', 'OpenDate'],
+                rows: [
+                    [1, 'Coastal Grill', 'Miami', 'FL', '2015-03-12'],
+                    [2, 'Sunset Bistro', 'Tampa', 'FL', '2016-07-22'],
+                    [3, 'Harbor View', 'Jacksonville', 'FL', '2014-11-05'],
+                    [4, 'Palm Garden', 'Orlando', 'FL', '2017-02-18'],
+                    [5, 'Peachtree Diner', 'Atlanta', 'GA', '2018-09-30']
+                ]
+            },
+            servers: {
+                title: 'Servers Table - Sample Data',
+                columns: ['ServerEmpID', 'ServerName', 'ServerBirthDate', 'ServerTIN'],
+                rows: [
+                    [101, 'Maria Garcia', '1992-05-14', '***-**-1234'],
+                    [102, 'John Smith', '1988-11-22', '***-**-5678'],
+                    [103, 'Emily Chen', '1995-03-08', '***-**-9012'],
+                    [104, 'James Wilson', '1990-07-30', '***-**-3456'],
+                    [105, 'Sarah Johnson', '1993-12-15', '***-**-7890']
+                ]
+            },
+            serveremployments: {
+                title: 'ServerEmployments - Junction Table',
+                columns: ['ServerEmpID', 'RestaurantID', 'StartDateHired', 'EndDateHired', 'HourlyRate'],
+                rows: [
+                    [101, 1, '2020-01-15', null, '$18.50'],
+                    [101, 3, '2018-06-01', '2019-12-31', '$16.00'],
+                    [102, 2, '2019-03-20', null, '$17.25'],
+                    [103, 1, '2021-08-10', null, '$19.00'],
+                    [103, 4, '2020-02-01', '2021-07-15', '$15.50']
+                ]
+            },
+            customers: {
+                title: 'Customers Table - Sample Data',
+                columns: ['CustomerID', 'CustomerName', 'CustomerPhone', 'CustomerEmail', 'LoyaltyMember'],
+                rows: [
+                    [1, 'Alice Brown', '555-0101', 'alice@email.com', 'Yes'],
+                    [2, 'Bob Davis', '555-0102', 'bob@email.com', 'No'],
+                    [3, 'Carol White', '555-0103', 'carol@email.com', 'Yes'],
+                    [4, 'Dan Miller', '555-0104', 'dan@email.com', 'Yes'],
+                    [5, 'Eve Taylor', '555-0105', 'eve@email.com', 'No']
+                ]
+            },
+            lookups: {
+                title: 'Lookup Tables',
+                columns: ['Table', 'ID', 'Value'],
+                rows: [
+                    ['MealTypes', 1, 'Breakfast'],
+                    ['MealTypes', 2, 'Lunch'],
+                    ['MealTypes', 3, 'Dinner'],
+                    ['MealTypes', 4, 'Take-Out'],
+                    ['PaymentMethods', 1, 'Cash'],
+                    ['PaymentMethods', 2, 'Credit Card'],
+                    ['PaymentMethods', 3, 'Mobile Payment']
+                ]
+            }
+        };
+
+        function showTableDetails(tableName) {
+            var data = tableData[tableName];
+            var modal = document.getElementById('modal');
+            var title = document.getElementById('modal-title');
+            var body = document.getElementById('modal-body');
+
+            title.textContent = data.title;
+
+            var html = '<table class="sample-data-table"><tr>';
+            for (var i = 0; i < data.columns.length; i++) {
+                html += '<th>' + data.columns[i] + '</th>';
+            }
+            html += '</tr>';
+
+            for (var j = 0; j < data.rows.length; j++) {
+                html += '<tr>';
+                for (var k = 0; k < data.rows[j].length; k++) {
+                    var cell = data.rows[j][k];
+                    if (cell === null) {
+                        html += '<td class="null-value">NULL</td>';
+                    } else {
+                        html += '<td>' + cell + '</td>';
+                    }
+                }
+                html += '</tr>';
+            }
+            html += '</table>';
+
+            body.innerHTML = html;
+            modal.classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (!event || event.target === document.getElementById('modal')) {
+                document.getElementById('modal').classList.remove('active');
+            }
+        }
+
+        // Pipeline animation
+        var pipelineSteps = ['step-extract', 'step-transform', 'step-load', 'step-analyze'];
+        var currentStep = 0;
+
+        setInterval(function () {
+            for (var i = 0; i < pipelineSteps.length; i++) {
+                document.getElementById(pipelineSteps[i]).classList.remove('active');
+            }
+            document.getElementById(pipelineSteps[currentStep]).classList.add('active');
+            currentStep = (currentStep + 1) % pipelineSteps.length;
+        }, 2000);
+
+        // Close modal on Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Smooth scroll for nav links
+        var navLinks = document.querySelectorAll('.nav-links a');
+        for (var i = 0; i < navLinks.length; i++) {
+            navLinks[i].addEventListener('click', function (e) {
+                e.preventDefault();
+                var targetId = this.getAttribute('href').substring(1);
+                document.getElementById(targetId).scrollIntoView({ behavior: 'smooth' });
+            });
+        }
+    </script>
+</body>
+
+</html>
